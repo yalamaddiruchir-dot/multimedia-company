@@ -24,3 +24,38 @@ dist-ssr
 *.sw?
 .vite-source-tags.js
 .vercel
+
+# ============ Backend (Java/Spring Boot) ============
+# Build output
+backend/target/
+backend/*.jar
+backend/*.war
+
+# Maven
+backend/.mvn/wrapper/maven-wrapper.jar
+!backend/mvnw
+!backend/mvnw.cmd
+
+# IDE
+backend/.idea/
+backend/*.iml
+backend/.classpath
+backend/.project
+backend/.settings/
+backend/.vscode/
+
+# OS
+backend/.DS_Store
+backend/Thumbs.db
+
+# Logs
+backend/logs/
+backend/*.log
+
+# Environment
+backend/.env
+backend/application-local.yml
+
+# Temp files
+backend/tmp/
+backend/*.tmp

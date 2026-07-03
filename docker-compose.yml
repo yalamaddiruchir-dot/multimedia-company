@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: reelline-postgres
+    environment:
+      POSTGRES_DB: reelline
+      POSTGRES_USER: reelline
+      POSTGRES_PASSWORD: reelline123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U reelline"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - reelline-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: reelline-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - reelline-network
+
+  # Spring Boot Backend (optional - uncomment to run backend in Docker)
+  # backend:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   container_name: reelline-backend
+  #   environment:
+  #     DATABASE_URL: jdbc:postgresql://postgres:5432/reelline
+  #     DATABASE_USERNAME: reelline
+  #     DATABASE_PASSWORD: reelline123
+  #     JWT_SECRET: your-super-secret-jwt-key-min-256-bits-long-change-in-production
+  #     REDIS_HOST: redis
+  #     REDIS_PORT: 6379
+  #     SERVER_PORT: 8080
+  #     CORS_ORIGINS: http://localhost:3000,http://localhost:5173
+  #   ports:
+  #     - "8080:8080"
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #   networks:
+  #     - reelline-network
+
+  # Adminer - Database UI (optional)
+  adminer:
+    image: adminer:latest
+    container_name: reelline-adminer
+    ports:
+      - "8081:8080"
+    depends_on:
+      - postgres
+    networks:
+      - reelline-network
+
+volumes:
+  postgres-data:
+  redis-data:
+
+networks:
+  reelline-network:
+    driver: bridge
