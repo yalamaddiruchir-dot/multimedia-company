@@ -1,6 +1,9 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './lib/theme';
 import { UIProvider } from './lib/uiStore';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { LoginPage } from './pages/Login';
 import { Sidebar } from './components/layout/Sidebar';
 import { TopBar } from './components/layout/TopBar';
 import { CommandPalette } from './components/layout/CommandPalette';
@@ -21,39 +24,65 @@ import { AIPage } from './pages/AI';
 import { OrganizationPage } from './pages/Organization';
 import { SettingsPage } from './pages/Settings';
 
+function AppRoutes() {
+  const { isAuthenticated } = useAuth();
+
+  return (
+    <Routes>
+      {/* Public route - Login page */}
+      <Route
+        path="/login"
+        element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
+      />
+
+      {/* Protected routes - require authentication */}
+      <Route
+        path="/*"
+        element={
+          <ProtectedRoute>
+            <div className="min-h-screen flex bg-[var(--bg)]">
+              <Sidebar />
+              <div className="flex-1 min-w-0 flex flex-col">
+                <TopBar />
+                <main className="flex-1 overflow-x-hidden">
+                  <Routes>
+                    <Route path="/" element={<DashboardPage />} />
+                    <Route path="/projects" element={<ProjectsPage />} />
+                    <Route path="/projects/:id" element={<ProjectDetailPage />} />
+                    <Route path="/workflow" element={<WorkflowPage />} />
+                    <Route path="/calendar" element={<CalendarPage />} />
+                    <Route path="/analytics" element={<AnalyticsPage />} />
+                    <Route path="/notifications" element={<NotificationsPage />} />
+                    <Route path="/activity" element={<ActivityPage />} />
+                    <Route path="/team" element={<TeamPage />} />
+                    <Route path="/files" element={<FilesPage />} />
+                    <Route path="/ai" element={<AIPage />} />
+                    <Route path="/organization" element={<OrganizationPage />} />
+                    <Route path="/settings" element={<SettingsPage />} />
+                  </Routes>
+                </main>
+              </div>
+              <CommandPalette />
+              <AIAssistant />
+              <FloatingAIButton />
+              <ToastContainer />
+            </div>
+          </ProtectedRoute>
+        }
+      />
+    </Routes>
+  );
+}
+
 export default function App() {
   return (
     <ThemeProvider>
       <UIProvider>
-        <BrowserRouter>
-          <div className="min-h-screen flex bg-[var(--bg)]">
-            <Sidebar />
-            <div className="flex-1 min-w-0 flex flex-col">
-              <TopBar />
-              <main className="flex-1 overflow-x-hidden">
-                <Routes>
-                  <Route path="/" element={<DashboardPage />} />
-                  <Route path="/projects" element={<ProjectsPage />} />
-                  <Route path="/projects/:id" element={<ProjectDetailPage />} />
-                  <Route path="/workflow" element={<WorkflowPage />} />
-                  <Route path="/calendar" element={<CalendarPage />} />
-                  <Route path="/analytics" element={<AnalyticsPage />} />
-                  <Route path="/notifications" element={<NotificationsPage />} />
-                  <Route path="/activity" element={<ActivityPage />} />
-                  <Route path="/team" element={<TeamPage />} />
-                  <Route path="/files" element={<FilesPage />} />
-                  <Route path="/ai" element={<AIPage />} />
-                  <Route path="/organization" element={<OrganizationPage />} />
-                  <Route path="/settings" element={<SettingsPage />} />
-                </Routes>
-              </main>
-            </div>
-            <CommandPalette />
-            <AIAssistant />
-            <FloatingAIButton />
-            <ToastContainer />
-          </div>
-        </BrowserRouter>
+        <AuthProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </AuthProvider>
       </UIProvider>
     </ThemeProvider>
   );
