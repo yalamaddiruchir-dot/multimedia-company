@@ -6,10 +6,12 @@ import { Avatar } from '../ui/Avatar';
 import { team, notifications } from '../../data/mock';
 import { cn, relativeTime } from '../../lib/utils';
 import { useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
 
 export function TopBar() {
   const { theme, toggle } = useTheme();
   const { toggleSidebar, setCommandOpen, notifOpen, setNotifOpen, setAiOpen } = useUI();
+  const { isDemo, logout } = useAuth();
   const me = team[0];
   const [profileOpen, setProfileOpen] = useState(false);
   const unread = notifications.filter((n) => n.unread).length;
@@ -23,6 +25,16 @@ export function TopBar() {
         >
           <Menu className="h-4 w-4" />
         </button>
+
+        {isDemo && (
+          <button
+            onClick={logout}
+            title="Exit demo mode"
+            className="hidden sm:inline-flex items-center gap-1.5 px-2.5 h-7 rounded-full bg-purple-500/15 text-purple-400 text-[11px] font-semibold border border-purple-500/30 hover:bg-purple-500/25 transition-colors"
+          >
+            DEMO MODE · Exit
+          </button>
+        )}
 
         {/* Search / Command palette trigger */}
         <button

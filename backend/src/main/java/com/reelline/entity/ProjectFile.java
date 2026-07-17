@@ -41,10 +41,10 @@ public class ProjectFile {
     @Column(nullable = false)
     private long size;
     
-    @Column(nullable = false)
+    @Column(name = "s3_key", nullable = false)
     private String s3Key;
     
-    @Column(nullable = false)
+    @Column(name = "s3_url", nullable = false)
     private String s3Url;
     
     @Enumerated(EnumType.STRING)

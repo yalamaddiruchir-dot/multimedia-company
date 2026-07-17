@@ -1,7 +1,9 @@
 package com.reelline.controller;
 
 import com.reelline.dto.request.LoginRequest;
+import com.reelline.dto.request.RegisterRequest;
 import com.reelline.dto.response.AuthResponse;
+import com.reelline.dto.response.RegisterResponse;
 import com.reelline.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,11 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
+    }
+    
+    @PostMapping("/register")
+    public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
+        return ResponseEntity.ok(authService.register(request));
     }
     
     @PostMapping("/refresh")

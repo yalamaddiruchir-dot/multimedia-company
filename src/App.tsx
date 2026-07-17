@@ -4,6 +4,7 @@ import { UIProvider } from './lib/uiStore';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { LoginPage } from './pages/Login';
+import RegisterPage from './pages/RegisterPage';
 import { Sidebar } from './components/layout/Sidebar';
 import { TopBar } from './components/layout/TopBar';
 import { CommandPalette } from './components/layout/CommandPalette';
@@ -29,10 +30,14 @@ function AppRoutes() {
 
   return (
     <Routes>
-      {/* Public route - Login page */}
+      {/* Public routes */}
       <Route
         path="/login"
         element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
+      />
+      <Route
+        path="/register"
+        element={isAuthenticated ? <Navigate to="/" replace /> : <RegisterPage />}
       />
 
       {/* Protected routes - require authentication */}

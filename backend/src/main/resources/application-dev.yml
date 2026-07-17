@@ -1,0 +1,29 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:reellinedb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+  flyway:
+    enabled: false
+
+server:
+  port: 8080
+
+jwt:
+  secret: YourSuperSecretKeyForJWTTokenGenerationMustBe256BitsLong minimum
+  expiration: 86400000
+
+logging:
+  level:
+    com.reelline: DEBUG
+    org.springframework.security: DEBUG

@@ -10,13 +10,14 @@ import {
   TrendingUp, TrendingDown, FolderKanban, CheckCircle2, Clock, DollarSign,
   Calendar, Users, Activity, Plus, ArrowUpRight, AlertTriangle, Zap,
   Video, Image as ImageIcon, BookOpen, Edit3, PackageCheck, Briefcase, HardDrive,
-  Loader2,
+  Loader2, WifiOff,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn, formatCurrency } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
 import { getProjects, Project } from '../services/projectService';
 import { getUsers, User } from '../services/userService';
+import { projects as mockProjects, team as mockTeam, todaysTasks as mockTodaysTasks, recentActivity as mockRecentActivity } from '../data/mock';
 
 function KPI({
   label, value, delta, deltaUp, icon, accent,
@@ -49,6 +50,25 @@ function LoadingSkeleton() {
   );
 }
 
+// Helper to map API project to frontend format
+const mapProject = (p: Project) => ({
+  ...p,
+  type: p.type || 'WEDDING',
+  currentStage: p.currentStage || 'MANAGER',
+  priority: p.priority || 'MEDIUM',
+  status: p.status || 'ACTIVE',
+  thumbnail: p.thumbnail || 'wedding',
+});
+
+// Helper to map API user to frontend format
+const mapUser = (u: User) => ({
+  ...u,
+  role: u.role || 'EDITOR',
+  color: u.color || '#2563EB',
+  initials: u.initials || u.name.substring(0, 2).toUpperCase(),
+  status: u.status || 'online',
+});
+
 export function DashboardPage() {
   const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
@@ -64,12 +84,84 @@ export function DashboardPage() {
           getProjects(undefined, 0, 50),
           getUsers(),
         ]);
-        setProjects(projectsResponse.content || []);
-        setTeam(teamResponse || []);
+        
+        // Map API data to frontend format
+        const apiProjects = (projectsResponse.content || []).map(mapProject);
+        const apiTeam = (teamResponse || []).map(mapUser);
+        
+        // Use API data if available, otherwise fall back to mock data
+        setProjects(apiProjects.length > 0 ? apiProjects : mockProjects.map(p => ({
+          ...p,
+          type: p.type.toUpperCase(),
+          currentStage: p.currentStage.toUpperCase().replace('-', '_'),
+          priority: p.priority.toUpperCase(),
+          status: p.status.toUpperCase(),
+          managerName: p.manager,
+          managerId: p.manager,
+          team: p.team
+            .map(id => {
+              const user = mockTeam.find(t => t.id === id);
+              if (!user) return null;
+              return {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role as string,
+                color: user.color,
+                initials: user.initials,
+                status: user.status || 'online',
+              };
+            })
+            .filter((u): u is NonNullable<typeof u> => u !== null),
+        })));
+        setTeam(apiTeam.length > 0 ? apiTeam : mockTeam.map(u => ({
+          ...u,
+          role: u.role.toUpperCase().replace(' ', '_'),
+          color: u.color,
+          initials: u.initials,
+          status: u.status || 'online',
+        })));
+        
         setError(null);
       } catch (err: any) {
-        setError(err.response?.data?.message || 'Failed to load dashboard data');
         console.error('Dashboard fetch error:', err);
+        
+        // Graceful fallback: use mock data when API fails
+        console.warn('API failed, using mock data as fallback');
+        setProjects(mockProjects.map(p => ({
+          ...p,
+          type: p.type.toUpperCase(),
+          currentStage: p.currentStage.toUpperCase().replace('-', '_'),
+          priority: p.priority.toUpperCase(),
+          status: p.status.toUpperCase(),
+          managerName: p.manager,
+          managerId: p.manager,
+          team: p.team
+            .map(id => {
+              const user = mockTeam.find(t => t.id === id);
+              if (!user) return null;
+              return {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role as string,
+                color: user.color,
+                initials: user.initials,
+                status: user.status || 'online',
+              };
+            })
+            .filter((u): u is NonNullable<typeof u> => u !== null),
+        })));
+        setTeam(mockTeam.map(u => ({
+          ...u,
+          role: u.role.toUpperCase().replace(' ', '_'),
+          color: u.color,
+          initials: u.initials,
+          status: u.status || 'online',
+        })));
+        
+        // Show a subtle warning instead of blocking error
+        setError('Backend unavailable. Using demo data.');
       } finally {
         setLoading(false);
       }
@@ -114,23 +206,16 @@ export function DashboardPage() {
     );
   }
 
-  if (error) {
-    return (
-      <PageContainer>
-        <div className="flex flex-col items-center justify-center h-64 gap-4">
-          <AlertTriangle className="h-12 w-12 text-red-500" />
-          <p className="text-red-500 font-medium">Failed to load dashboard</p>
-          <p className="text-sm text-[var(--text-muted)]">{error}</p>
-          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
-            Retry
-          </Button>
-        </div>
-      </PageContainer>
-    );
-  }
-
   return (
     <PageContainer>
+      {/* Subtle warning banner when using fallback data */}
+      {error && (
+        <div className="mb-6 bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 flex items-center gap-3">
+          <WifiOff className="h-4 w-4 text-amber-600" />
+          <span className="text-sm text-amber-700">{error}</span>
+        </div>
+      )}
+
       <PageHeader
         title={`Welcome back, ${user?.name || 'there'}`}
         description="Here's what's happening with your projects today."

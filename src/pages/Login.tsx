@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { login as loginService } from "../services/authService";
 
@@ -9,7 +9,7 @@ export const LoginPage: React.FC = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   
-  const { login } = useAuth();
+  const { login, loginDemo } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -27,6 +27,30 @@ export const LoginPage: React.FC = () => {
       navigate(from, { replace: true });
     } catch (err: any) {
       setError(err.response?.data?.message || "Invalid email or password");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Offline demo: no backend needed at all, works instantly.
+  const handleInstantDemo = () => {
+    loginDemo();
+    navigate(from, { replace: true });
+  };
+
+  // Live demo: fills the seeded demo account and logs in for real -
+  // useful once your backend/DB is actually running (locally or deployed).
+  const handleLiveDemoLogin = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      const response = await loginService("aarav@reelline.io", "password123");
+      login(response.user, response.accessToken, response.refreshToken);
+      navigate(from, { replace: true });
+    } catch (err: any) {
+      setError(
+        "Live demo account not reachable - backend may be down. Try Instant Demo instead."
+      );
     } finally {
       setLoading(false);
     }
@@ -89,6 +113,42 @@ export const LoginPage: React.FC = () => {
             {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
+
+        <div className="relative my-2">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-white/10" />
+          </div>
+          <div className="relative flex justify-center text-xs">
+            <span className="px-2 bg-transparent text-gray-400">or</span>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={handleInstantDemo}
+            className="w-full py-3 px-4 bg-white/10 border border-white/20 text-white font-semibold rounded-lg hover:bg-white/20 transition-all"
+          >
+            🚀 Try Instant Demo (no backend needed)
+          </button>
+          <button
+            type="button"
+            onClick={handleLiveDemoLogin}
+            disabled={loading}
+            className="w-full py-2.5 px-4 bg-transparent border border-white/10 text-gray-300 text-sm font-medium rounded-lg hover:bg-white/5 disabled:opacity-50 transition-all"
+          >
+            Use seeded demo account (aarav@reelline.io)
+          </button>
+        </div>
+
+        <div className="text-center mt-4">
+          <p className="text-sm text-gray-300">
+            Don't have an account?{' '}
+            <Link to="/register" className="text-purple-400 hover:text-purple-300 font-semibold">
+              Create one
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
