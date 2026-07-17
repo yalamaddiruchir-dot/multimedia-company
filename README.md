@@ -18,6 +18,7 @@
 
 ## 📖 Table of Contents
 
+- [Recent Updates](#-recent-updates)
 - [Overview](#-overview)
 - [Architecture](#-architecture)
 - [Tech Stack](#-tech-stack)
@@ -30,6 +31,30 @@
 - [Roadmap](#-roadmap)
 - [Contributing](#-contributing)
 - [License](#-license)
+
+---
+
+## 🆕 Recent Updates
+
+A round of connectivity and auth fixes landed on top of the original
+scaffold. Full detail in `API_INTEGRATION.md`'s changelog section; summary:
+
+- Silent access-token refresh (no more forced re-login every 15 minutes)
+- `SecurityConfig` now returns 401 for expired/missing tokens vs 403 for
+  real role-permission denials (previously both returned 403)
+- CORS origins now read from the `CORS_ORIGINS` env var instead of being
+  hardcoded to `localhost` — required for any non-local deployment
+- Fixed a `ProjectFile` entity/schema column-name mismatch (`s3Key`/`s3Url`)
+  that crashed the backend on startup
+- Hardened the `User` entity against lazy-loading/circular-reference issues
+  in serialization and logging
+- Added **Demo Mode** — "Try Instant Demo" (mock data, no backend) and "Use
+  seeded demo account" buttons on the Login page
+- Fixed the header/sidebar always showing "Aarav Kapoor" regardless of who
+  was actually logged in, and wired up two sign-out buttons that previously
+  did nothing
+- Added Railway deployment config (`railway.json`, `backend/Dockerfile`) —
+  see `DEPLOYMENT.md`
 
 ---
 
@@ -255,10 +280,16 @@ Frontend will be available at: **http://localhost:5173**
 
 ### 5. First Login
 
-Currently using mock data in frontend. To connect to backend:
-1. Update API base URL in frontend to `http://localhost:8080`
-2. Create a user directly in database or via seed script
-3. Login with credentials
+You have three options:
+1. **Try Instant Demo** (on the Login page) — zero backend calls, uses
+   built-in mock data. Fastest way to browse the UI.
+2. **Use seeded demo account** (also on the Login page) — logs in for real
+   against `aarav@reelline.io` / `password123`, which `DataInitializer`
+   creates automatically the first time it runs against an empty database
+   (along with 7 team members and 8 sample projects — see backend startup
+   logs to confirm).
+3. **Register your own account** at `/register`, or via
+   `POST /api/auth/register` — see `QUICK_START_REGISTER.md`.
 
 ---
 
@@ -313,8 +344,13 @@ multimedia-company/
 ### Authentication
 ```
 POST   /api/auth/login           # Email + password → JWT tokens
-POST   /api/auth/refresh         # Refresh access token
+POST   /api/auth/register        # Create a new user
+POST   /api/auth/refresh         # Exchange a refresh token for a new access token
 ```
+Requests to any other `/api/**` route respond `401` if the token is
+missing/expired (the frontend auto-refreshes and retries transparently in
+this case) and `403` if the token is valid but the account's role lacks
+permission for that action.
 
 ### Projects
 ```
@@ -427,18 +463,22 @@ REDIS_PORT=...
 - [x] Analytics dashboard
 - [x] AI Assistant UI
 - [x] Backend entities & repositories
-- [x] JWT authentication
+- [x] JWT authentication (login, register, and refresh)
 - [x] Basic CRUD APIs
 - [x] Database migrations
 
 ### 🚧 Phase 2: Production Features (Next)
 - [ ] Complete all backend services
-- [ ] Complete all REST controllers
+- [ ] Complete all REST controllers (only Auth, Projects, Users exist —
+      Activities, Comments, Revisions, Notifications, Files, Calendar,
+      Team management are still frontend-only mock data)
 - [ ] WebSocket real-time updates
 - [ ] Redis caching
 - [ ] File uploads (S3)
 - [ ] Email notifications
-- [ ] Connect frontend to backend
+- [x] Connect frontend to backend (Dashboard fetches real data with a mock
+      fallback; login/register/refresh fully wired; Railway deploy config
+      ready in `railway.json` / `backend/Dockerfile` — not yet deployed)
 
 ### 🔮 Phase 3: Advanced
 - [ ] AI integration (OpenAI API)

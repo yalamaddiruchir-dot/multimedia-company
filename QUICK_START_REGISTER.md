@@ -1,5 +1,11 @@
 # 🎯 Login Issue - Complete Solution
 
+> **Even quicker:** the Login page now has a "Try Instant Demo" button that
+> skips registration entirely (pure mock data, no backend needed) and a
+> "Use seeded demo account" button that logs into an account
+> `DataInitializer` already creates for you. Use this guide if you
+> specifically want your own real account instead.
+
 ## ✅ What I Fixed
 
 I've added a **Register Endpoint** to your backend and a **Register Page** to your frontend. Now you can create users easily!

@@ -8,7 +8,21 @@ The database has no users yet, and the DataInitializer may not have run properly
 
 ## Solutions (Choose One)
 
-### Solution 1: Use Register Endpoint (Easiest)
+### Solution 0: Skip login entirely with Demo Mode (Fastest)
+
+The Login page now has two demo buttons that need no working backend or
+seeded users at all:
+- **"Try Instant Demo"** — logs you straight in with mock data, zero
+  network calls made. Good for just browsing the UI.
+- **"Use seeded demo account"** — logs in for real against
+  `aarav@reelline.io` / `password123`, which `DataInitializer` seeds
+  automatically the first time it runs against an empty database. Use
+  this once your backend + Postgres are actually up.
+
+If this doesn't work either (e.g. backend is down), fall through to
+Solution 1 below.
+
+### Solution 1: Use Register Endpoint (Easiest manual option)
 
 I've added a `/api/auth/register` endpoint. Now you can create users via API.
 
@@ -193,7 +207,8 @@ curl -X POST http://localhost:8080/api/auth/login \
 
 The `-v` flag shows detailed output. Look for:
 - `200 OK` = Success
-- `401 Unauthorized` = Wrong credentials
+- `401 Unauthorized` = No/invalid/expired token, or (on login) wrong credentials — note: if you're hitting this on an *already logged-in* session rather than the login call itself, it should now silently self-heal via the token-refresh interceptor instead of showing this error at all
+- `403 Forbidden` = Valid token, but the account's role doesn't have permission for this action (distinct from 401 as of the recent `SecurityConfig` fix — both used to return 403, making expired sessions indistinguishable from real permission errors)
 - `500 Internal Server Error` = Backend error
 
 ---

@@ -6,7 +6,9 @@ I've successfully integrated your React frontend with the Spring Boot backend AP
 
 ### 1. **Axios Setup** (`src/api/api.ts`)
 - Created an Axios instance with automatic JWT token injection
-- Added response interceptor to handle 401 errors (auto-redirect to login)
+- Response interceptor silently refreshes an expired access token via
+  `/api/auth/refresh` and retries the original request, instead of
+  immediately logging the user out (updated — see Changelog below)
 - Configured to use your backend URL from environment variables
 
 ### 2. **Service Layer** (`src/services/`)
@@ -154,7 +156,8 @@ Exit psql: `\q`
 
 ✅ **API Integration**
 - All API calls include JWT token automatically
-- 401 errors trigger auto-logout
+- Expired access tokens silently refresh via `/api/auth/refresh` and retry —
+  the user only gets logged out if the refresh token itself is also expired
 - Proper error handling throughout
 
 ---
@@ -189,7 +192,8 @@ Your backend already has these endpoints ready:
 
 ### Authentication
 - `POST /api/auth/login` - Login
-- `POST /api/auth/refresh` - Refresh token
+- `POST /api/auth/register` - Register a new user
+- `POST /api/auth/refresh` - Refresh an expired access token (fully implemented — previously a `// TODO` stub, now issues a real rotated access + refresh token pair)
 
 ### Projects
 - `GET /api/projects` - List all projects (paginated, filterable)
@@ -223,9 +227,14 @@ Tokens are stored in localStorage:
 - `user` - Current user data
 
 ### 3. **CORS**
-Your backend is configured to accept requests from:
+Your backend reads allowed origins from the `CORS_ORIGINS` environment
+variable (`cors.allowed-origins` in `application.yml`), defaulting to:
 - `http://localhost:5173` (Vite dev server)
 - `http://localhost:3000` (alternative dev port)
+
+This used to be hardcoded directly in `SecurityConfig.java`, which silently
+broke CORS for any non-localhost frontend (e.g. a deployed Railway/Vercel
+domain). Set `CORS_ORIGINS` to your deployed frontend URL when you deploy.
 
 ### 4. **Build Succeeded!**
 ✅ Frontend builds successfully with no errors
@@ -269,6 +278,47 @@ cd myproject && npm run dev
 - Frontend: http://localhost:5173
 - Backend: http://localhost:8080
 - API Docs: http://localhost:8080/swagger-ui.html
+
+---
+
+## 📝 Changelog — Auth & Connectivity Fixes
+
+Since the original integration above, these were fixed:
+
+- **Silent token refresh**: `/api/auth/refresh` was a `// TODO` stub that
+  did nothing. It's now fully implemented (`AuthService.refreshAccessToken`)
+  and the frontend's axios interceptor calls it automatically the moment an
+  access token expires (15 min), retrying the failed request transparently.
+  Users are only logged out if the refresh token itself is also expired
+  (7 days) — previously *any* expired token immediately forced a re-login.
+- **401 vs 403 split**: `SecurityConfig.java` now distinguishes "no/expired
+  token" (401) from "valid token, wrong role" (403) via an explicit
+  `authenticationEntryPoint`/`accessDeniedHandler`. Previously both cases
+  returned 403, so the frontend couldn't safely tell an expired session
+  apart from a real permissions error.
+- **CORS now env-driven**: was hardcoded to `localhost` origins only; now
+  reads `CORS_ORIGINS` (see CORS section above).
+- **`ProjectFile` entity/schema mismatch fixed**: `s3Key`/`s3Url` fields had
+  no explicit `@Column` name. Hibernate's default naming strategy doesn't
+  insert an underscore before a digit-then-uppercase transition, so it
+  computed `s3key` instead of matching the migration's `s3_key` column —
+  causing a hard startup failure (`Schema-validation: missing column`).
+- **`User` entity hardening**: swapped Lombok `@Data` for explicit
+  `@Getter/@Setter` + a scoped `@ToString(exclude = {...})`, and added
+  `@JsonIgnore` on the lazy `organization`/`createdProjects`/`assignments`
+  relations — prevents `LazyInitializationException` / circular-reference
+  stack overflows if a `User` entity is ever logged or serialized directly.
+- **Demo mode added**: Login page now has "Try Instant Demo" (zero backend
+  calls, pure mock data) and "Use seeded demo account" (real login against
+  the account `DataInitializer` already seeds) buttons.
+- **TopBar/Sidebar showed the wrong user**: both hardcoded `team[0]` from
+  mock data instead of the real authenticated user — every login showed
+  "Aarav Kapoor" regardless of who was actually signed in. Also fixed two
+  buttons ("Sign out" in the profile dropdown, and the sidebar user row)
+  that had no `onClick` handler at all.
+
+See `DEPLOYMENT.md` for the full Railway deployment guide added alongside
+these fixes.
 
 ---
 

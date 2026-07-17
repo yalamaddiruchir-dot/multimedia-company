@@ -398,11 +398,24 @@ npm run dev -- --port 3000
 ```
 
 **Error: Cannot connect to backend**
-- Check that backend is running on port 8080
+- Check that backend is running on port 8080 (`curl http://localhost:8080/actuator/health`)
 - Verify `VITE_API_URL` in `.env` file
-- Check CORS settings in `SecurityConfig.java`
+- Check the `CORS_ORIGINS` environment variable (defaults to `http://localhost:3000,http://localhost:5173` — see `cors.allowed-origins` in `application.yml`). This used to be hardcoded in `SecurityConfig.java` and silently ignored the env var; that's now fixed.
+- If you get a real (not connection-refused) network error in the browser console with a specific 403/401 status instead of a blocked-CORS message, that's a different issue — see `LOGIN_FIX_GUIDE.md`
 
 ### Docker issues
+
+**Error: `Conflict. The container name "/reelline-postgres" is already in use`**
+
+Container names in `docker-compose.yml` are fixed (`container_name: reelline-postgres`, etc.), but Docker container names are global on your machine — not scoped per project folder. If you've unzipped/cloned this project into a new folder before, containers from the old folder are probably still running under the same names.
+```bash
+# Option A: just reuse what's already running
+docker ps   # if reelline-postgres/reelline-redis show "Up (healthy)", skip straight to starting the backend
+
+# Option B: reset cleanly
+docker rm -f reelline-postgres reelline-redis reelline-adminer
+docker-compose up -d postgres redis
+```
 
 **Error: Port already in use**
 ```bash
