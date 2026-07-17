@@ -4,15 +4,18 @@ import { useUI } from '../../lib/uiStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar } from '../ui/Avatar';
 import { team, notifications } from '../../data/mock';
-import { cn, relativeTime } from '../../lib/utils';
+import { cn, relativeTime, formatRole, toPresenceStatus } from '../../lib/utils';
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 
 export function TopBar() {
   const { theme, toggle } = useTheme();
   const { toggleSidebar, setCommandOpen, notifOpen, setNotifOpen, setAiOpen } = useUI();
-  const { isDemo, logout } = useAuth();
-  const me = team[0];
+  const { user, isDemo, logout } = useAuth();
+  // Falls back to mock data only if somehow rendered with no authenticated
+  // user at all (shouldn't happen behind ProtectedRoute, but keeps this
+  // component safe to use in isolation).
+  const me = user ?? team[0];
   const [profileOpen, setProfileOpen] = useState(false);
   const unread = notifications.filter((n) => n.unread).length;
 
@@ -106,14 +109,14 @@ export function TopBar() {
             onClick={() => { setProfileOpen(!profileOpen); setNotifOpen(false); }}
             className="flex items-center gap-2 h-9 pl-1 pr-2 rounded-xl hover:bg-[var(--surface-2)] transition-colors"
           >
-            <Avatar name={me.name} color={me.color} size="sm" status={me.status as any} />
+            <Avatar name={me.name} color={me.color} size="sm" status={toPresenceStatus(me.status)} />
             <div className="hidden md:block text-left">
               <div className="text-xs font-semibold text-[var(--text)] leading-tight">{me.name.split(' ')[0]}</div>
-              <div className="text-[10px] text-[var(--text-muted)] leading-tight">{me.role}</div>
+              <div className="text-[10px] text-[var(--text-muted)] leading-tight">{formatRole(me.role)}</div>
             </div>
           </button>
           <AnimatePresence>
-            {profileOpen && <ProfileDropdown onClose={() => setProfileOpen(false)} />}
+            {profileOpen && <ProfileDropdown me={me} onLogout={logout} onClose={() => setProfileOpen(false)} />}
           </AnimatePresence>
         </div>
       </div>
@@ -180,7 +183,15 @@ function NotificationDropdown({ onClose }: { onClose: () => void }) {
   );
 }
 
-function ProfileDropdown({ onClose }: { onClose: () => void }) {
+function ProfileDropdown({
+  me,
+  onLogout,
+  onClose,
+}: {
+  me: { name: string; email: string; color: string };
+  onLogout: () => void;
+  onClose: () => void;
+}) {
   return (
     <>
       <div className="fixed inset-0 z-40" onClick={onClose} />
@@ -193,10 +204,10 @@ function ProfileDropdown({ onClose }: { onClose: () => void }) {
       >
         <div className="p-3 border-b border-[var(--border)]">
           <div className="flex items-center gap-2.5">
-            <Avatar name={team[0].name} color={team[0].color} size="md" />
+            <Avatar name={me.name} color={me.color} size="md" />
             <div className="min-w-0">
-              <p className="text-sm font-semibold truncate">{team[0].name}</p>
-              <p className="text-[11px] text-[var(--text-muted)] truncate">{team[0].email}</p>
+              <p className="text-sm font-semibold truncate">{me.name}</p>
+              <p className="text-[11px] text-[var(--text-muted)] truncate">{me.email}</p>
             </div>
           </div>
         </div>
@@ -208,7 +219,10 @@ function ProfileDropdown({ onClose }: { onClose: () => void }) {
           ))}
         </div>
         <div className="p-1.5 border-t border-[var(--border)]">
-          <button className="w-full text-left px-3 py-2 text-xs font-medium rounded-lg hover:bg-red-500/10 text-red-500">
+          <button
+            onClick={onLogout}
+            className="w-full text-left px-3 py-2 text-xs font-medium rounded-lg hover:bg-red-500/10 text-red-500"
+          >
             Sign out
           </button>
         </div>

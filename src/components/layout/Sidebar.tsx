@@ -3,9 +3,10 @@ import {
   LayoutDashboard, FolderKanban, Workflow, Calendar, BarChart3, Bell, Activity,
   Users, Files, Sparkles, Building2, Settings, HelpCircle, LogOut, ChevronDown,
 } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { cn, formatRole } from '../../lib/utils';
 import { useUI } from '../../lib/uiStore';
 import { team } from '../../data/mock';
+import { useAuth } from '../../context/AuthContext';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, badge: null },
@@ -25,7 +26,8 @@ const navItems = [
 export function Sidebar() {
   const { sidebarOpen, setSidebarOpen } = useUI();
   const location = useLocation();
-  const me = team[0];
+  const { user, logout } = useAuth();
+  const me = user ?? team[0];
 
   return (
     <>
@@ -123,19 +125,22 @@ export function Sidebar() {
 
         {/* User */}
         <div className="px-3 pb-3 border-t border-[var(--border)] pt-3">
-          <div className="flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-[var(--surface-2)] transition-colors cursor-pointer group">
+          <button
+            onClick={logout}
+            className="w-full flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-[var(--surface-2)] transition-colors cursor-pointer group"
+          >
             <div
               className="h-8 w-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
               style={{ background: me.color }}
             >
               {me.initials}
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 text-left">
               <div className="text-xs font-semibold text-[var(--text)] truncate">{me.name}</div>
-              <div className="text-[10px] text-[var(--text-muted)]">{me.role}</div>
+              <div className="text-[10px] text-[var(--text-muted)]">{formatRole(me.role)}</div>
             </div>
             <LogOut className="h-3.5 w-3.5 text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
+          </button>
         </div>
       </aside>
     </>

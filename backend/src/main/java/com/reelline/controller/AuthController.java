@@ -28,8 +28,8 @@ public class AuthController {
     }
     
     @PostMapping("/refresh")
-    public ResponseEntity<String> refreshToken(@RequestHeader("Authorization") String refreshToken) {
-        // TODO: Implement refresh token logic
-        return ResponseEntity.ok("Token refreshed");
+    public ResponseEntity<AuthResponse> refreshToken(@RequestHeader("Authorization") String authHeader) {
+        String refreshToken = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
+        return ResponseEntity.ok(authService.refreshAccessToken(refreshToken));
     }
 }

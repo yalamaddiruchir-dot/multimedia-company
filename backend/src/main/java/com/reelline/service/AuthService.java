@@ -125,6 +125,36 @@ public class AuthService {
             .build();
     }
     
+    // Exchanges a valid, non-expired refresh token for a brand-new access token
+    // (and a rotated refresh token, so a leaked/old refresh token stops working
+    // once used). This was previously a TODO stub in AuthController - the
+    // frontend now calls this automatically the moment an access token expires,
+    // instead of forcing the user to log in again every 15 minutes.
+    public AuthResponse refreshAccessToken(String refreshToken) {
+        if (!jwtTokenProvider.validateToken(refreshToken)) {
+            throw new RuntimeException("Invalid or expired refresh token");
+        }
+
+        var userId = jwtTokenProvider.getUserIdFromToken(refreshToken);
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (user.getStatus() != User.Status.ACTIVE) {
+            throw new RuntimeException("Account is not active");
+        }
+
+        String newAccessToken = jwtTokenProvider.generateAccessToken(
+            user.getId(), user.getEmail(), user.getRole().name()
+        );
+        String newRefreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
+
+        return AuthResponse.builder()
+            .accessToken(newAccessToken)
+            .refreshToken(newRefreshToken)
+            .user(mapToUserResponse(user))
+            .build();
+    }
+
     private UserResponse mapToUserResponse(User user) {
         return UserResponse.builder()
             .id(user.getId())

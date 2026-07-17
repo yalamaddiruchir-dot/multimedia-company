@@ -48,6 +48,7 @@ backend/.vscode/
 backend/.DS_Store
 backend/Thumbs.db
 
+# Logs
 backend/logs/
 backend/*.log
 
@@ -58,6 +59,6 @@ backend/application-local.yml
 # Temp files
 backend/tmp/
 backend/*.tmp
+
 # Frontend env file
 .env
-

@@ -1,6 +1,7 @@
 package com.reelline.config;
 
 import com.reelline.security.JwtAuthenticationFilter;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -44,6 +45,18 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> 
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            )
+            // Without this, Spring Security's default for an unauthenticated request to a
+            // protected endpoint is 403 - indistinguishable from a real role/permission
+            // denial. That made expired/missing JWTs impossible for the frontend to tell
+            // apart from "you're logged in but not allowed here", so it could never safely
+            // trigger a token refresh. Now: no/invalid/expired token -> 401, authenticated
+            // but wrong role (e.g. @PreAuthorize failures) -> 403.
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((request, response, authException) ->
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"))
+                .accessDeniedHandler((request, response, accessDeniedException) ->
+                    response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden"))
             )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()

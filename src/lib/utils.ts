@@ -43,3 +43,22 @@ export function relativeTime(date: Date): string {
   if (d < 7) return `${d}d ago`;
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
+
+// A real logged-in user's role/status come from the backend as raw enum
+// names (e.g. "DATA_COPY", "ACTIVE") while mock data already uses the
+// display form ("Data Copy", "online"). These normalize either shape to
+// what the UI expects, so a real account renders the same as mock data.
+export function formatRole(role: string): string {
+  return role
+    .toLowerCase()
+    .split(/[_\s]+/)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
+export function toPresenceStatus(status?: string): 'online' | 'away' | 'offline' {
+  const s = (status || '').toLowerCase();
+  if (s === 'online' || s === 'active') return 'online';
+  if (s === 'away' || s === 'invited') return 'away';
+  return 'offline';
+}
